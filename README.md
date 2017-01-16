@@ -10,16 +10,16 @@
 1.  Create CA Public Key & Private Key
 
     ```
-    openssl req -out rootcacert.cer -newkey rsa:2048 -keyout rootcakey.pem -x509 -days 7300
+    openssl req -out rootcacert.cer -keyout rootcakey.pem -newkey rsa:2048 -days 7300 -x509
     ```
 
     > Enter PEM pass phrase: ``changeit``
     >
     > Verifying - Enter PEM pass phrase: ``changeit``
     >
-    > Country Name (2 letter code) [AU]: ``.``
+    > Country Name (2 letter code) [AU]: ``TW``
     >
-    > State or Province Name (full name) [Some-State]: ``.``
+    > State or Province Name (full name) [Some-State]: ``Taiwan``
     >
     > Locality Name (eg, city) []: ``.``
     >
@@ -31,12 +31,18 @@
     >
     > Email Address []: ``.``
 
+    *   -x509
+
+        Change output from certificate request to public key.
+
+    *   -sha256 (default)
+
 ## Create Intermediate CA
 
 1.   Create Intermediate CA Certificate Request & Private Key
 
     ```
-    openssl req -out intermediatecacrt.pem -newkey rsa:2048 -keyout intermediatecakey.pem
+    openssl req -out intermediatecacsr.pem -keyout intermediatecakey.pem -newkey rsa:2048
     ```
 
     > Enter PEM pass phrase: ``changeit``
@@ -45,7 +51,7 @@
     >
     > Country Name (2 letter code) [AU]: ``TW``
     >
-    > State or Province Name (full name) [Some-State]: ``.``
+    > State or Province Name (full name) [Some-State]: ``Taiwan``
     >
     > Locality Name (eg, city) []: ``.``
     >
@@ -61,20 +67,42 @@
     >
     > An optional company name []: ``.``
 
+    *   The Country Name, State or Province Name and Organization Name need match with Root CA (or edit [ policy_match ], [ policy_match ] in default openssl.cfg)
+
 2.   Create Intermediate CA Public key
 
     ```
-    openssl x509 -in intermediatecacrt.pem -out intermediatecacert.cer -days 1460 -req -CA rootcacert.cer -CAkey rootcakey.pem -CAcreateserial -sha256
+    mkdir demoCA
+    echo. 2>"demoCA/index.txt"
+    openssl ca -in intermediatecacsr.pem -out intermediatecacert.cer -cert rootcacert.cer -keyfile rootcakey.pem -days 1460 -outdir . -extensions v3_ca -create_serial
     ```
 
     > Enter pass phrase for rootcakey.pem: ``changeit``
+    >
+    > Sign the certificate? [y/n]: ``y``
+    >
+    > 1 out of 1 certificate requests certified, commit? [y/n] ``y``
+
+    *   -outdir .
+
+        Set new_certs_dir = .(default is ./demoCA/newcerts)
+
+    *   -extensions v3_ca
+
+        Set basicConstraints = critical,CA:true ([ v3_ca ] in default openssl.cfg)
+
+    *   -create_serial
+
+        Create a random serial
+
+    *   -md sha256 (default)
 
 ## Create Certificate
 
-4.   Create Certificate Request & Private Key
+1.   Create Certificate Request & Private Key
 
     ```
-    openssl req -out crt.pem -newkey rsa:2048 -keyout key.pem
+    openssl req -out csr.pem -keyout key.pem -newkey rsa:2048
     ```
 
     > Enter PEM pass phrase: ``changeit``
@@ -99,13 +127,23 @@
     >
     > An optional company name []: ``.``
 
-5.   Create CA Public key
+2.   Create CA Public key
 
     ```
-    openssl x509 -in crt.pem -out cert.cer -days 90 -req -CA intermediatecacert.cer -CAkey intermediatecakey.pem -CAcreateserial -sha256
+    openssl x509 -in csr.pem -out cert.cer -CA intermediatecacert.cer -CAkey intermediatecakey.pem -days 90 -req -CAcreateserial
     ```
 
     > Enter pass phrase for intermediatecakey.pem: ``changeit``
+
+    *   -req
+
+        Change input from public key to certificate request
+
+    *   -CAcreateserial
+
+        Create a random serial
+
+    *   -sha256 (default)
 
 ## Reference
 * [OpenSSL Manpages Commands](https://www.openssl.org/docs/manmaster/man1/)

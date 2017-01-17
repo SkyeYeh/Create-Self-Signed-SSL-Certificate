@@ -10,7 +10,7 @@
 1.  Create CA Public Key & Private Key
 
     ```
-    openssl req -out rootcacert.cer -keyout rootcakey.pem -newkey rsa:2048 -days 7300 -x509
+    openssl req -out rootca.crt -keyout rootca.key -newkey rsa:2048 -days 7300 -x509
     ```
 
     > Enter PEM pass phrase: ``changeit``
@@ -42,7 +42,7 @@
 1.   Create Intermediate CA Certificate Request & Private Key
 
     ```
-    openssl req -out intermediatecacsr.pem -keyout intermediatecakey.pem -newkey rsa:2048
+    openssl req -out intermediateca.csr -keyout intermediateca.key -newkey rsa:2048
     ```
 
     > Enter PEM pass phrase: ``changeit``
@@ -67,17 +67,19 @@
     >
     > An optional company name []: ``.``
 
-    *   The Country Name, State or Province Name and Organization Name need match with Root CA (or edit [ policy_match ], [ policy_match ] in default openssl.cfg)
+    *   The Country Name, State or Province Name and Organization Name need match with Root CA
+
+        (or edit [ policy_match ], [ policy_match ] in default openssl.cfg)
 
 2.   Create Intermediate CA Public key
 
     ```
     mkdir demoCA
     echo. 2>"demoCA/index.txt"
-    openssl ca -in intermediatecacsr.pem -out intermediatecacert.cer -cert rootcacert.cer -keyfile rootcakey.pem -days 1460 -outdir . -extensions v3_ca -create_serial
+    openssl ca -in intermediateca.csr -out intermediateca.crt -cert rootca.crt -keyfile rootca.key -days 1460 -outdir . -extensions v3_ca -create_serial
     ```
 
-    > Enter pass phrase for rootcakey.pem: ``changeit``
+    > Enter pass phrase for rootca.key: ``changeit``
     >
     > Sign the certificate? [y/n]: ``y``
     >
@@ -102,13 +104,9 @@
 1.   Create Certificate Request & Private Key
 
     ```
-    openssl req -out csr.pem -keyout key.pem -newkey rsa:2048
+    openssl req -out cert.csr -keyout cert.key -newkey rsa:2048 -nodes
     ```
 
-    > Enter PEM pass phrase: ``changeit``
-    >
-    > Verifying - Enter PEM pass phrase: ``changeit``
-    >
     > Country Name (2 letter code) [AU]: ``.``
     >
     > State or Province Name (full name) [Some-State]: ``.``
@@ -119,7 +117,7 @@
     >
     > Organizational Unit Name (eg, section) []: ``.``
     >
-    > Common Name (e.g. server FQDN or YOUR name) []: ``10.0.0.1``
+    > Common Name (e.g. server FQDN or YOUR name) []: ``www.domain.dom (use your domain)``
     >
     > Email Address []: ``.``
     >
@@ -127,13 +125,17 @@
     >
     > An optional company name []: ``.``
 
+    *   -nodes
+
+        No need PEM pass, Then no need enter the password when server start.
+
 2.   Create CA Public key
 
     ```
-    openssl x509 -in csr.pem -out cert.cer -CA intermediatecacert.cer -CAkey intermediatecakey.pem -days 90 -req -CAcreateserial
+    openssl x509 -in cert.csr -out cert.crt -CA intermediateca.crt -CAkey intermediateca.key -days 90 -req -CAcreateserial
     ```
 
-    > Enter pass phrase for intermediatecakey.pem: ``changeit``
+    > Enter pass phrase for intermediateca.key: ``changeit``
 
     *   -req
 
